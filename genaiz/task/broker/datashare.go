@@ -1,0 +1,59 @@
+package broker
+
+import "genaiz.com/genaiz/task"
+
+var (
+	errorDataShareLinkInvalid    = task.NewError("can not query for inactive links")
+	errorDataShareHandleInvalid  = task.NewError("handle is invalid for version")
+	errorDataShareOemRequired    = task.NewError("oem is required for filtering")
+	errorDataShareVersionInvalid = task.NewError("version is invalid for sequence")
+)
+
+type DataInstanceListParams struct {
+	Broker
+	*DataLink
+}
+
+func (dsl DataInstanceListParams) getLinkId() *int64 {
+	if dsl.DataLink != nil {
+		return dsl.DataLink.Id
+	}
+
+	return nil
+}
+
+func (dsl DataInstanceListParams) hasDataLinkFilter() bool {
+	return dsl.DataLink != nil && dsl.Oem != ""
+}
+
+func (dsl DataInstanceListParams) isVersionEqual(instance *DataLinkInstance) bool {
+	if dsl.DataLink != nil && instance != nil {
+		return dsl.Version == instance.DataLink.Version &&
+			((dsl.Seq == nil && instance.DataLink.Seq == nil) ||
+				(dsl.Seq != nil && instance.DataLink.Seq != nil && *dsl.Seq == *instance.DataLink.Seq))
+	}
+
+	return false
+}
+
+func (dsl DataInstanceListParams) validateDataLinkFilter() error {
+	if dsl.DataLink != nil {
+		if dsl.Oem == "" && (dsl.Handle != "" || dsl.Version != "" || dsl.Seq != nil) {
+			return errorDataShareOemRequired
+		}
+
+		if dsl.Handle == "" && (dsl.Version != "" || dsl.Seq != nil) {
+			return errorDataShareHandleInvalid
+		}
+
+		if dsl.Version == "" && dsl.Seq != nil {
+			return errorDataShareVersionInvalid
+		}
+
+		if dsl.Id != nil && !dsl.IsActive() {
+			return errorDataShareLinkInvalid
+		}
+	}
+
+	return nil
+}

@@ -1,38 +1,60 @@
-# Genaiz SmartFunction Toolkit
+# GenAIz Package
 
+* [Architecture](#architecture)
 * [Makefile](#makefile)
 * [Minimal Build](#minimal-build)
 * [Commands](#commands)
-  * [account (ac)](#account-ac)
-    * [activate](#activate)
-    * [inspect](#inspect)
-    * [list](#list)
-    * [login](#login)
-    * [logout](#logout)
-  * [function (sf)](#function-sf)
-    * [build](#build)
-    * [create](#create)
-    * [init](#init)
-    * [list](#list-1)
-    * [prop](#prop)
-    * [publish](#publish)
-    * [run](#run)
-    * [start](#start)
-    * [stop](#stop)
-    * [test](#test)
-  * [solution (sn)](#solution-sn)
-    * [create](#create-1)
-    * [list](#list-2)
-    * [publish](#publish-1)
-  * [workflow (wf)](#workflow-wf)
-    * [create](#create-2)
-    * [delete](#delete)
-    * [links add/rm](#links-addrm)
-    * [nodes add/rm](#nodes-addrm)
-  * [Workspace (ws)](#workspace-ws)
-    * [create](#create-3)
-    * [list](#list-3)
-  * [Workspace Flow (ws flow)](#workspace-flow-ws-flow)
+    * [account (ac)](#account-ac)
+    * [datalink (dk)](#datalink-dk)
+    * [locker (lk)](#locker-lk)
+    * [function (sf)](#function-sf)
+    * [solution (sn)](#solution-sn)
+    * [workflow (wf)](#workflow-wf)
+    * [workspace (ws)](#workspace-ws)
+
+## Architecture
+
+The CLI architecture follows a pattern of integrations with the [Cobra](https://github.com/spf13/cobra)
+and [Viper](https://github.com/spf13/viper) frameworks, popular with various GoLang projects. The architecture was
+augmented with layers to decouple the spf13 framing from the actual task logic behind the commands.
+
+There are several distinct layers in the code: The `cmd` layer, is where we use Cobra and Viper heavily. The `config`
+layer contains merged framework bindings with configuration persistence functionality as a `Ledger`. The `task` layer
+is where integrations with surrounding components is made. For instance: `docker`, `registry` and the GenAIz `broker`
+itself. Finally, we use some form of shared layers in `mgmt` to factor common task executions, such as listing and
+reading information.
+
+Utility packages such as `cli`, `recipe` and `schema` provide utilitarian functionality shared to `cmd` or `task`.
+`lang` is a generic catch-all for language enhancement constructs.
+
+A rough layering can be seen below:
+
+```mermaid
+block-beta
+    columns 4
+    main:4
+    block: genaiz:3
+        columns 5
+        cli
+        cmd
+        config
+        schema
+        version
+    end
+    lang
+    block: wut:4
+        mgmt
+        recipe
+        task
+    end
+    block: tasks:4
+        broker
+        docker
+        locker
+        os
+    end
+
+```
 
 ## Makefile
 
@@ -82,7 +104,7 @@ re-authorize an expired session.
 
 When the command activates a session that is not
 
-```bash
+```shell
 genaiz ac activate --help
 genaiz ac activate dev.genaiz.com
 ```
@@ -91,7 +113,7 @@ genaiz ac activate dev.genaiz.com
 
 The inspect command allows a process to confirm session credentials. This was added for CI/CD scripts.
 
-```bash
+```shell
 genaiz ac inspect --help
 genaiz ac inspect
 ```
@@ -103,7 +125,7 @@ results as a JSON list.
 
 It can use an argument to apply basic filtering to the list:
 
-```bash
+```shell
 genaiz ac list --help
 genaiz ac list dev.genaiz.com
 genaiz ac list dev.genaiz.com --json
@@ -128,9 +150,123 @@ specified.
 genaiz ac logout
 ```
 
+### datalink (dk)
+
+The datalink command is used to create, modify and publish datalink definitions to an Orchestration. The command
+requires the **admin** role. Datalinks are definitions subject to instantiation on a per-user basis once the definition
+is available.
+
+The definition of a Datalink is the set of properties and secret properties used to establish a link. It is a parallel
+to a Schema.
+
+```shell
+genaiz dk --help
+```
+
+#### create
+
+Creates a datalink definition locally. Typically, this will write to `$HOME/.config/genaiz/Genaiz.yaml`. It creates an
+empty and incomplete definition, which can be updated with the [prop](#prop) command group.
+
+```shell
+genaiz dk create --help
+```
+
+#### list
+
+Listing datalinks is a command which can list datalinks associated with an account or the ones that are configured
+locally.
+
+```shell
+genaiz dk list --help
+```
+
+#### prop
+
+Prop is a command group for adding, editing and removing properties from a datalink definition.
+
+```shell
+genaiz dk prop --help
+genaiz dk prop add --help
+genaiz dk prop edit --help
+genaiz dk prop rm --help
+```
+
+#### proxy
+
+Proxy is a command group for adding and removing outbound proxies required by the datalink to function.
+
+```shell
+genaiz dk proxy --help
+genaiz dk proxy add --help
+genaiz dk proxy rm --help
+```
+
+#### publish
+
+Publish is a command for publishing a local datalink to an admin account on an Orchestration broker.
+
+```shell
+genaiz dk publish --help
+```
+
+#### sync
+
+Sync is a command for importing a datalink definition from an Orchestration broker to the local configuration file.
+
+```shell
+genaiz dk sync --help
+```
+
+### locker (lk)
+
+The locker command group is used to manage local locker files, required to be able to publish data sources and data
+stores to an Orchestration broker.
+
+Lockers are encrypted files, passphrase protected, which need to be opened when a command requiring a data source or
+store is invoked.
+
+```shell
+genaiz lk --help
+```
+
+#### init
+
+Initializing a locker is a necessary first step, but it is also can be used to change the passphrase used to encrypt
+the file and the properties contained within.
+
+```shell
+genaiz lk init --help
+```
+
+#### source
+
+Source is a command group allowing adding data source instances and updating the data source properties used to connect
+a Smart Function and an external datalink.
+
+```shell
+genaiz lk source --help
+genaiz lk source add --help
+genaiz lk source publish --help
+genaiz lk source update --help
+```
+
+#### store
+
+Store is a command group allowing adding data store instances and updating the data store properties used to connect
+a Smart Function and an external datalink.
+
+```shell
+genaiz lk store --help
+genaiz lk store add --help
+genaiz lk store publish --help
+genaiz lk store update --help
+```
+
 ### function (sf)
 
-The function module is used to manage smart functions and publish them as Docker images to an Orchestrating Broker.
+The function command group is used to manage smart functions and publish them as Docker images to an Orchestrating
+Broker.
 
 ```shell
 genaiz sf --help
@@ -153,6 +289,20 @@ populated with the values passed to this command.
 
 ```shell
 genaiz sf create --help
+```
+
+#### data
+
+The data command group is used to manage several Smart Function components: input and output ports, outbound proxies,
+data source, and data store requirements.
+
+```shell
+genaiz sf data --help
+genaiz sf data input --help
+genaiz sf data output --help
+genaiz sf data proxy --help
+genaiz sf data source --help
+genaiz sf data store --help
 ```
 
 #### init
@@ -180,6 +330,10 @@ to runtime environments which environment variable the function expects.
 
 ```shell
 genaiz sf prop --help
+genaiz sf prop add --help
+genaiz sf prop edit --help
+genaiz sf prop env --help
+genaiz sf prop rm --help
 ```
 
 #### publish
@@ -279,7 +433,7 @@ an error.
 genaiz wf delete --help
 ```
 
-#### links add/rm
+#### links
 
 The "links" commands can be used to add and remove links to and from an existing workflow. If the workflow does not
 exist, it returns an error.
@@ -290,15 +444,27 @@ genaiz wf links add --help
 genaiz wf links rm --help
 ```
 
-#### nodes add/rm
+#### nodes
 
-The "nodes" commands can be used to add and remove nodes to and from an existing workflow. If the workflow does not
+The nodes commands can be used to add and remove nodes to and from an existing workflow. If the workflow does not
 exist, it returns an error.
 
 ```shell
 genaiz wf nodes --help
 genaiz wf nodes add --help
 genaiz wf nodes rm --help
+```
+
+#### prop
+
+The prop command group is used to add or remove property values, or overrides on workflow nodes from the perspective of
+their parent solution.
+
+```shell
+genaiz wf prop --help
+genaiz wf prop add --help
+genaiz wf prop edit --help
+genaiz wf prop rm --help
 ```
 
 ### Workspace (ws)
@@ -310,8 +476,18 @@ for being able to run workflows on a group of brokered agents.
 
 The create command is a simple first step when configuring a workspace for an account.
 
-```bash
+```shell
 genaiz ws create --help
+```
+
+#### flow
+
+The flow sub-command group helps creating and managing workspace flows. These instances are necessary for
+executing [solution workflows](#workflow-wf) on a given Orchestration broker.
+
+```shell
+genaiz ws flow --help
+genaiz ws flow create --help
 ```
 
 #### list
@@ -319,14 +495,15 @@ genaiz ws create --help
 The list command serves an intermediary command for IDE displaying a list of available workspaces to the user. For
 subsequent Account Management commands the list is used to instruct adding building blocks to an enclosing workspace.
 
-```bash
+```shell
 genaiz ws list --help
 ```
 
-### Workspace Flow (ws flow)
+#### node
 
-Flow create is how a user instantiates a Solution he published into a Workspace for execution.
+The node command group allows individual nodes of workspace flows to be targeted to be able to configure data sets, sources, stores and proxies.
 
-```bash
-genaiz ws flow create --help
+```shell
+genaiz ws node --help
+genaiz ws node list --help
 ```

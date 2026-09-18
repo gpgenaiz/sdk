@@ -234,17 +234,15 @@ func (dss dataInstancesSlices) graph(links []DataLink, instances []DataLinkInsta
 		if instance.DataLinkId != nil {
 			if dl, ok := idToLink[*instance.DataLinkId]; ok {
 				result = append(result, DataLinkInstance{
-					Id:               instance.Id,
-					Name:             instance.Name,
-					Description:      instance.Description,
-					Active:           instance.Active,
-					Visibility:       instance.Visibility,
-					Flags:            instance.Flags,
-					DataLinkId:       instance.DataLinkId,
-					dataLinkOem:      dl.Oem,
-					dataLinkHandle:   dl.Handle,
-					dataLinkVersion:  dl.Version,
-					dataLinkSequence: dl.Seq,
+					Id:          instance.Id,
+					Created:     instance.Created,
+					Modified:    instance.Modified,
+					Name:        instance.Name,
+					Description: instance.Description,
+					Visibility:  instance.Visibility,
+					Flags:       instance.Flags,
+					DataLinkId:  instance.DataLinkId,
+					DataLink:    dl,
 				})
 			}
 		}

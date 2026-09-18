@@ -34,6 +34,10 @@ var (
 		Active:   1 << 0,
 		Released: 1 << 1,
 	}
+	DataLinkInstanceFlags = &dataLinkInstanceFlags{
+		Active: 1 << 0,
+		Broken: 1 << 1,
+	}
 	FunctionFlags = &functionFlags{
 		Active:       1 << 0,
 		Released:     1 << 1,
@@ -304,33 +308,31 @@ type dataLinkFlags struct {
 
 // DataLinkInstance can be a DataSource or a DataStore, they are semantically the same
 type DataLinkInstance struct {
-	Id          *int64 `json:"id,omitempty"`
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
-	DataLinkId  *int64 `json:"dataLinkId,omitempty"`
-	OwnerUserId *int64 `json:"ownerUserId,omitempty"`
-	Active      bool   `json:"active"`
-	Visibility  string `json:"visibility"`
-	Flags       *int   `json:"flags,omitempty"`
-
-	dataLinkOem      string
-	dataLinkHandle   string
-	dataLinkVersion  string
-	dataLinkSequence *int
+	Id          *int64            `json:"id,omitempty"`
+	Created     int64             `json:"nco"`
+	Modified    int64             `json:"nms"`
+	Name        string            `json:"name"`
+	Description string            `json:"description,omitempty"`
+	DataLinkId  *int64            `json:"dataLinkId,omitempty"`
+	DataLink    DataLink          `json:"-"`
+	OwnerUserId *int64            `json:"ownerUserId,omitempty"`
+	Properties  map[string]string `json:"props,omitempty"`
+	Visibility  string            `json:"visibility"`
+	Flags       *int              `json:"flags,omitempty"`
 }
 
 func (dli DataLinkInstance) CompareSeq(instance *DataLinkInstance) int {
 	if instance != nil {
 		// absence of sequence is interpreted as released so nil is >, although there should still be a sequence on it
-		if instance.dataLinkSequence != nil {
-			if dli.dataLinkSequence != nil {
-				return cmp.Compare(*dli.dataLinkSequence, *instance.dataLinkSequence)
+		if instance.DataLink.Seq != nil {
+			if dli.DataLink.Seq != nil {
+				return cmp.Compare(*dli.DataLink.Seq, *instance.DataLink.Seq)
 			}
 
 			return 1
 		}
 
-		if dli.dataLinkSequence == nil {
+		if dli.DataLink.Seq == nil {
 			return 0
 		}
 	}
@@ -339,22 +341,32 @@ func (dli DataLinkInstance) CompareSeq(instance *DataLinkInstance) int {
 }
 
 func (dli DataLinkInstance) HasLink(link *DataLink) bool {
-	if link == nil {
+	if link != nil {
+		return link.IsEqual(dli.DataLink.Oem, dli.DataLink.Handle, dli.DataLink.Version)
+	}
+
+	return false
+}
+
+func (dli DataLinkInstance) IsActive() bool {
+	if dli.Flags == nil {
 		return false
 	}
 
-	return link.IsEqual(dli.dataLinkOem, dli.dataLinkHandle, dli.dataLinkVersion)
+	return (*dli.Flags & DataLinkInstanceFlags.Active) == DataLinkInstanceFlags.Active
+}
+
+type dataLinkInstanceFlags struct {
+	Active int
+	Broken int
 }
 
 func NewDataLinkInstance(id int64, name string, dataLink *DataLink) *DataLinkInstance {
 	return &DataLinkInstance{
-		Id:               &id,
-		DataLinkId:       dataLink.Id,
-		Name:             name,
-		dataLinkOem:      dataLink.Oem,
-		dataLinkHandle:   dataLink.Handle,
-		dataLinkVersion:  dataLink.Version,
-		dataLinkSequence: dataLink.Seq,
+		Id:         &id,
+		Name:       name,
+		DataLinkId: dataLink.Id,
+		DataLink:   *dataLink,
 	}
 }
 

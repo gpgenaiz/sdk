@@ -1,6 +1,7 @@
 package mgmt
 
 import (
+	"cmp"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -204,14 +205,7 @@ func (udp *userDataLinksProvider) Get() ([]UserDataLink, task.Error) {
 
 		if len(result) > 1 {
 			slices.SortFunc(result, func(a, b UserDataLink) int {
-				// Reverse ordering
-				if a.Created > b.Created {
-					return -1
-				} else if a.Created < b.Created {
-					return 1
-				}
-
-				return 0
+				return cmp.Compare(b.Created, a.Created)
 			})
 		}
 

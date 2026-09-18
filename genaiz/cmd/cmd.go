@@ -16,6 +16,7 @@ import (
 	"genaiz.com/genaiz/cli"
 	"genaiz.com/genaiz/cmd/ac"
 	"genaiz.com/genaiz/cmd/dk"
+	"genaiz.com/genaiz/cmd/dt"
 	"genaiz.com/genaiz/cmd/lk"
 	"genaiz.com/genaiz/cmd/sc"
 	"genaiz.com/genaiz/cmd/sf"
@@ -117,6 +118,7 @@ func New(ledger *config.Ledger) *cobra.Command {
 	root.AddCommand(ws.NewWs(ledger, options.Confirm, options.Dry, options.Pretend))
 	root.AddCommand(dk.NewDk(ledger, options.Confirm, options.Dry, options.Pretend))
 	root.AddCommand(lk.NewLk(ledger, options.Confirm, options.Dry, options.Pretend))
+	root.AddCommand(dt.NewDt(ledger))
 	root.AddCommand(sc.NewSc())
 	return root
 }
