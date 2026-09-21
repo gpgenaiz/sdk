@@ -18,6 +18,10 @@ are described plainly in [Gherkin](https://cucumber.io/docs/gherkin/) format.
 * [genaiz account login](account/index.md#login)
 * [genaiz account logout](account/index.md#logout)
 
+## [Data](data/index.md)
+
+* [genaiz data source](data/source.md)
+
 ## [Datalinks](datalink/index.md)
 
 * [genaiz datalink create](datalink/create.md)

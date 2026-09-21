@@ -1,6 +1,6 @@
 # GenAIz CLI
 
-<sub>Genaiz Version 1.0.2</sub>
+<sub>Genaiz Version 1.0.3</sub>
 
 The GenAIz CLI is a tool for creating, building and publishing Smart Functions to the GenAIz Orchestration platform. It
 also provides toolkits to manage Orchestrated Workspaces and execute their Workflows.
@@ -11,6 +11,7 @@ also provides toolkits to manage Orchestrated Workspaces and execute their Workf
     * [Result Values](#result-values)
     * [Auto-Completion](#auto-completion)
     * [Account Management](#account-management)
+    * [DataLink Management](#datalink-management)
     * [Workspace Management](#workspace-management)
     * [Credentials Management](#credentials-management)
 * [Development Guide](#development-guide)
@@ -65,7 +66,7 @@ The following example creates a smart function **function-1**, without a parent 
 out of context. We can then list and run the smart function on a local **Docker** installation within the folder created
 or out of it.
 
-```bash
+```shell
 genaiz sf create function-1 --oem="com.genaiz.examples" --recipe="bash-example"
 genaiz sf build --context=function-1/
 cd function-1
@@ -156,7 +157,7 @@ shell's configuration.
 
 The account command can be used to authenticate with multiple OIDC enabled brokers with valid account credentials.
 
-```bash
+```shell
 genaiz ac login dev.genaiz.com
 genaiz ac list
 genaiz ac login lab.genaiz.com
@@ -168,7 +169,7 @@ The command should print a JSON array with the sessions currently known to the S
 achieved by specifying the host account to log out or by simply logging out of the active session without adding any
 host argument:
 
-```bash
+```shell
 genaiz ac logout dev.genaiz.com
 genaiz ac logout
 ```
@@ -185,20 +186,52 @@ These 2 bits of information can be used on CI/CD configurations to avoid having 
 `$HOME/.cache/genaiz` for a given session. The session token should typically be held in the **Secrets** of the CI/CD
 pipeline in need of calling the genaiz cli.
 
+### Datalink Management
+
+When a Smart Function requires a connection to a service, Datalinks provide a schema for the required connection
+parameters to establish the connection. Orchestration deployments will typically only allow certain Datalink definitions
+to be used, the records managed by Admins.
+
+The GenAIz CLI provides tooling for creating, publishing and assigning data source and store properties for the
+execution of a Smart Function.
+
+#### Creating a Local Datalink
+
+Datalink commands will write definitions under `$HOME/.config/genaiz/Genaiz.yaml` by default. The following commands are
+an example of how to define a new Datalink. Create will assume the version by default is always `1.0.0`
+
+```shell
+genaiz dk create com.genaiz.examples/datalink-1 --name='DataLink 1'
+genaiz dk prop add com.genaiz.examples/datalink-1:1.0.0 MY_KEY
+genaiz dk prop add com.genaiz.examples/datalink-1:1.0.0 MY_KEY_2
+genaiz dk prop edit com.genaiz.examples/datalink-1:1.0.0 MY_KEY_2 --name='My Key'
+genaiz dk prop rm com.genaiz.examples/datalink-1:1.0.0 MY_KEY
+genaiz dk prop add com.genaiz.examples/datalink-1:1.0.0 MY_KEY --secret 
+```
+
+#### Publishing a Datalink
+
+To be able to publish a Datalink a user needs to be logged in as an admin
+
+```shell
+genaiz ac login dev.genaiz.com
+genaiz dk publish com.genaiz.examples/datalink-1:1.0.0
+```
+
 ### Workspace Management
 
 #### Creating a Workspace
 
 The GenAIz CLI provides commands to help manage workspaces associated with an account on a GenAIz Orchestration service.
 
-```bash
+```shell
 genaiz workspace create myWorkspace
 ```
 
 A Workspace is the root for all Solution executions. Once a Workspace is created, Solution Workflows need to be
 instantiated in terms of Workspace Flows.
 
-```bash
+```shell
 genaiz workspace flow create myWorkspace com.genaiz/mySolution:1.0.0 myWorkflowHandle
 ```
 
@@ -242,7 +275,7 @@ genaiz workspace data source unlink my-workspace \
 
 Locally, the locker should be used when invoking the Smart Function run, start and test commands:
 
-```bash
+```shell
 genaiz sf run --env-locked=myLocalHandle --locker=myFilePath
 ```
 
@@ -261,7 +294,7 @@ information at the links provided here:
 
 ### Building from Source
 
-```bash
+```shell
 cd genaiz-cli
 make genaiz/install
 ```
@@ -274,13 +307,13 @@ make genaiz/install
 Building the individual modules can be achieved in the same manner or simply by running the install target on the root
 project:
 
-```bash
+```shell
 make install
 ```
 
 Print a summary of all make targets by entering
 
-```bash
+```shell
 make help
 ```
 
@@ -337,19 +370,19 @@ configuration you will have to configure it manually. Under **Intellij**, this i
 
 Check that docker is running the following under Systemd:
 
-```bash
+```shell
 systemctl status docker
 ```
 
 Under OpenRC:
 
-```bash
+```shell
 rc-service docker status
 ```
 
 Check that the permissions on /var/run/docker.sock allows your user to connect to it:
 
-```bash
+```shell
 ls -l /var/run/docker.sock
 groups
 ```
